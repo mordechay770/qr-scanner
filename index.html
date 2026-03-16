@@ -95,6 +95,26 @@
         .corner.bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-radius: 0 0 0 20px; }
         .corner.br { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-radius: 0 0 20px 0; }
         
+        .controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .focus-btn {
+            background: rgba(255,255,255,0.3);
+            border: 2px solid rgba(255,255,255,0.5);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
         .btn-primary {
             width: 100%;
             background: white;
@@ -205,10 +225,19 @@
             padding: 20px;
             border-radius: 15px;
             margin-bottom: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
         }
         
         .settings h3 {
             margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .settings-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
         
         .radio-group {
@@ -230,13 +259,13 @@
             background: rgba(255,255,255,0.2);
         }
         
-        input[type="radio"] {
+        input[type="radio"], input[type="checkbox"] {
             width: 18px;
             height: 18px;
             cursor: pointer;
         }
         
-        input[type="text"], input[type="url"] {
+        input[type="text"], input[type="url"], input[type="number"], select {
             width: 100%;
             padding: 12px;
             border: 2px solid rgba(255,255,255,0.3);
@@ -247,8 +276,60 @@
             margin-bottom: 10px;
         }
         
+        select {
+            cursor: pointer;
+        }
+        
+        select option {
+            background: #667eea;
+            color: white;
+        }
+        
         input::placeholder {
             color: rgba(255,255,255,0.5);
+        }
+        
+        .param-row {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+        
+        .param-row input {
+            flex: 1;
+            margin: 0;
+        }
+        
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.3);
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .btn-add {
+            background: rgba(34, 197, 94, 0.3);
+            border: 2px solid rgba(34, 197, 94, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        
+        .info-box {
+            background: rgba(59, 130, 246, 0.2);
+            border: 2px solid rgba(59, 130, 246, 0.4);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.5;
         }
         
         .hidden {
@@ -265,48 +346,116 @@
             font-size: 16px;
             font-weight: bold;
         }
+        
+        .redirecting {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="title">🎯 QR Сканер</div>
+            <div class="title" id="headerTitle">🎯 QR Сканер</div>
             <div>
-                <button class="lang-btn" onclick="toggleLang()">RU</button>
+                <button class="lang-btn" onclick="toggleLang()" id="langBtn">RU</button>
                 <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
             </div>
         </div>
         
         <div id="settings" class="settings hidden">
-            <h3>Режим сканирования</h3>
-            <div class="radio-group">
-                <label class="radio-option">
-                    <input type="radio" name="mode" value="auto" checked onchange="setMode(this.value)">
-                    Открыть URL автоматически
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="mode" value="append" onchange="setMode(this.value)">
-                    Добавить код к URL
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="mode" value="preview" onchange="setMode(this.value)">
-                    Предпросмотр
-                </label>
+            <!-- Basic Settings -->
+            <div class="settings-section">
+                <h3 id="settingsTitle1">Режим сканирования</h3>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="mode" value="auto" checked onchange="setMode(this.value)">
+                        <span id="mode1">Открыть URL автоматически</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="mode" value="append" onchange="setMode(this.value)">
+                        <span id="mode2">Добавить код к URL</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="mode" value="preview" onchange="setMode(this.value)">
+                        <span id="mode3">Предпросмотр перед открытием</span>
+                    </label>
+                </div>
             </div>
             
-            <div id="urlSettings" class="hidden">
+            <!-- URL Settings -->
+            <div id="urlSettings" class="settings-section hidden">
+                <h3 id="settingsTitle2">Базовый URL</h3>
                 <input type="url" id="baseUrl" placeholder="https://example.com/verify">
+                
+                <h3 id="settingsTitle3">Дополнительные параметры</h3>
+                <div id="paramsList"></div>
+                <button class="btn-add" onclick="addParam()" id="addParamBtn">+ Добавить параметр</button>
             </div>
             
-            <button class="btn-primary" onclick="saveSettings()">Сохранить</button>
+            <!-- Feedback Settings -->
+            <div class="settings-section">
+                <h3 id="settingsTitle4">Обратная связь</h3>
+                <label class="radio-option">
+                    <input type="checkbox" id="soundEnabled" checked>
+                    <span id="soundLabel">Звуковой сигнал</span>
+                </label>
+                <label class="radio-option">
+                    <input type="checkbox" id="vibrateEnabled" checked>
+                    <span id="vibrateLabel">Вибрация</span>
+                </label>
+            </div>
+            
+            <!-- Advanced Camera Settings -->
+            <div class="settings-section">
+                <h3 id="settingsTitle5">⚙️ Настройки камеры (продвинутые)</h3>
+                <div class="info-box" id="cameraInfo">
+                    💡 <strong>Инструкция:</strong> Если камера не работает, попробуйте изменить эти настройки.<br>
+                    • <strong>Качество:</strong> Высокое = лучше, но медленнее. Низкое = быстрее.<br>
+                    • <strong>Режим фокуса:</strong> Авто = обычно лучший выбор.<br>
+                    • <strong>FPS:</strong> 30 = стандарт. Если тормозит, попробуйте 15.
+                </div>
+                
+                <label id="qualityLabel">Качество изображения:</label>
+                <select id="cameraQuality" onchange="updateCameraQuality()">
+                    <option value="low">Низкое (640x480) - Быстрее</option>
+                    <option value="medium" selected>Среднее (1280x720) - Рекомендуется</option>
+                    <option value="high">Высокое (1920x1080) - Медленнее</option>
+                </select>
+                
+                <label id="focusLabel">Режим фокуса:</label>
+                <select id="focusMode">
+                    <option value="auto" selected>Автоматический</option>
+                    <option value="continuous">Непрерывный</option>
+                    <option value="manual">Ручной</option>
+                </select>
+                
+                <label id="fpsLabel">FPS (кадров в секунду):</label>
+                <select id="frameRate">
+                    <option value="15">15 FPS - Экономия батареи</option>
+                    <option value="24">24 FPS - Баланс</option>
+                    <option value="30" selected>30 FPS - Стандарт</option>
+                </select>
+            </div>
+            
+            <button class="btn-primary" onclick="saveSettings()" id="saveBtn">Сохранить настройки</button>
         </div>
         
         <div id="error" class="error hidden"></div>
         
         <div id="readyScreen" class="ready-screen">
-            <h2>Готов к сканированию</h2>
-            <p>Нажмите кнопку для запуска камеры</p>
-            <button class="btn-primary" onclick="startScanner()">ЗАПУСТИТЬ СКАНЕР</button>
+            <h2 id="readyTitle">Готов к сканированию</h2>
+            <p id="readyDesc">Нажмите кнопку для запуска камеры</p>
+            <button class="btn-primary" onclick="startScanner()" id="startBtn">ЗАПУСТИТЬ СКАНЕР</button>
         </div>
         
         <div id="scanningScreen" class="hidden">
@@ -319,51 +468,189 @@
                     <div class="corner bl"></div>
                     <div class="corner br"></div>
                 </div>
+                <div class="controls">
+                    <button class="focus-btn" onclick="toggleTorch()">💡</button>
+                    <button class="focus-btn" onclick="focusCamera()">🔍</button>
+                </div>
             </div>
-            <div class="status">Наведите на QR-код</div>
-            <button class="btn-stop" onclick="stopScanner()">ОСТАНОВИТЬ</button>
+            <div class="status" id="statusText">Наведите на QR-код</div>
+            <button class="btn-stop" onclick="stopScanner()" id="stopBtn">ОСТАНОВИТЬ</button>
         </div>
         
         <div id="previewScreen" class="preview hidden">
-            <h2>✓ Отсканировано</h2>
+            <h2 id="previewTitle">✓ Отсканировано</h2>
             <div class="preview-content" id="previewContent"></div>
             <div class="btn-group">
-                <button class="btn-secondary" onclick="scanAgain()">ЕЩЁ РАЗ</button>
+                <button class="btn-secondary" onclick="scanAgain()" id="scanAgainBtn">ЕЩЁ РАЗ</button>
                 <button class="btn-success" id="openBtn" onclick="openUrl()">ОТКРЫТЬ</button>
             </div>
         </div>
+    </div>
+    
+    <div id="redirecting" class="redirecting hidden">
+        <span id="redirectText">Открытие...</span>
     </div>
 
     <script>
         let video, canvas, ctx, stream, scanning = false;
         let mode = 'auto';
         let baseUrl = '';
+        let params = [];
         let lastCode = '';
         let lang = 'ru';
+        let soundEnabled = true;
+        let vibrateEnabled = true;
+        let track = null;
+        let cameraQuality = 'medium';
+        let focusMode = 'auto';
+        let frameRate = 30;
         
-        // Load settings
+        const translations = {
+            ru: {
+                headerTitle: '🎯 QR Сканер',
+                settingsTitle1: 'Режим сканирования',
+                settingsTitle2: 'Базовый URL',
+                settingsTitle3: 'Дополнительные параметры',
+                settingsTitle4: 'Обратная связь',
+                settingsTitle5: '⚙️ Настройки камеры (продвинутые)',
+                mode1: 'Открыть URL автоматически',
+                mode2: 'Добавить код к URL',
+                mode3: 'Предпросмотр перед открытием',
+                soundLabel: 'Звуковой сигнал',
+                vibrateLabel: 'Вибрация',
+                addParamBtn: '+ Добавить параметр',
+                saveBtn: 'Сохранить настройки',
+                readyTitle: 'Готов к сканированию',
+                readyDesc: 'Нажмите кнопку для запуска камеры',
+                startBtn: 'ЗАПУСТИТЬ СКАНЕР',
+                statusText: 'Наведите на QR-код',
+                stopBtn: 'ОСТАНОВИТЬ',
+                previewTitle: '✓ Отсканировано',
+                scanAgainBtn: 'ЕЩЁ РАЗ',
+                openBtn: 'ОТКРЫТЬ',
+                redirectText: 'Открытие...',
+                qualityLabel: 'Качество изображения:',
+                focusLabel: 'Режим фокуса:',
+                fpsLabel: 'FPS (кадров в секунду):',
+                cameraInfo: '💡 <strong>Инструкция:</strong> Если камера не работает, попробуйте изменить эти настройки.<br>• <strong>Качество:</strong> Высокое = лучше, но медленнее. Низкое = быстрее.<br>• <strong>Режим фокуса:</strong> Авто = обычно лучший выбор.<br>• <strong>FPS:</strong> 30 = стандарт. Если тормозит, попробуйте 15.',
+                settingsSaved: '✓ Настройки сохранены'
+            },
+            he: {
+                headerTitle: '🎯 סורק QR',
+                settingsTitle1: 'מצב סריקה',
+                settingsTitle2: 'URL בסיס',
+                settingsTitle3: 'פרמטרים נוספים',
+                settingsTitle4: 'משוב',
+                settingsTitle5: '⚙️ הגדרות מצלמה (מתקדם)',
+                mode1: 'פתח URL אוטומטית',
+                mode2: 'הוסף קוד ל-URL',
+                mode3: 'תצוגה מקדימה לפני פתיחה',
+                soundLabel: 'צליל',
+                vibrateLabel: 'רטט',
+                addParamBtn: '+ הוסף פרמטר',
+                saveBtn: 'שמור הגדרות',
+                readyTitle: 'מוכן לסריקה',
+                readyDesc: 'לחץ על הכפתור להפעלת המצלמה',
+                startBtn: 'הפעל סורק',
+                statusText: 'כוון את המצלמה לקוד QR',
+                stopBtn: 'עצור',
+                previewTitle: '✓ נסרק',
+                scanAgainBtn: 'סרוק שוב',
+                openBtn: 'פתח',
+                redirectText: 'פותח...',
+                qualityLabel: 'איכות תמונה:',
+                focusLabel: 'מצב פוקוס:',
+                fpsLabel: 'FPS (פריימים לשנייה):',
+                cameraInfo: '💡 <strong>הדרכה:</strong> אם המצלמה לא עובדת, נסה לשנות הגדרות אלו.<br>• <strong>איכות:</strong> גבוהה = טוב יותר, אך איטי יותר. נמוכה = מהיר יותר.<br>• <strong>פוקוס:</strong> אוטומטי = בדרך כלל הטוב ביותר.<br>• <strong>FPS:</strong> 30 = סטנדרטי. אם איטי, נסה 15.',
+                settingsSaved: '✓ ההגדרות נשמרו'
+            }
+        };
+        
+        function updateUI() {
+            const t = translations[lang];
+            document.getElementById('headerTitle').textContent = t.headerTitle;
+            document.getElementById('settingsTitle1').textContent = t.settingsTitle1;
+            document.getElementById('settingsTitle2').textContent = t.settingsTitle2;
+            document.getElementById('settingsTitle3').textContent = t.settingsTitle3;
+            document.getElementById('settingsTitle4').textContent = t.settingsTitle4;
+            document.getElementById('settingsTitle5').textContent = t.settingsTitle5;
+            document.getElementById('mode1').textContent = t.mode1;
+            document.getElementById('mode2').textContent = t.mode2;
+            document.getElementById('mode3').textContent = t.mode3;
+            document.getElementById('soundLabel').textContent = t.soundLabel;
+            document.getElementById('vibrateLabel').textContent = t.vibrateLabel;
+            document.getElementById('addParamBtn').textContent = t.addParamBtn;
+            document.getElementById('saveBtn').textContent = t.saveBtn;
+            document.getElementById('readyTitle').textContent = t.readyTitle;
+            document.getElementById('readyDesc').textContent = t.readyDesc;
+            document.getElementById('startBtn').textContent = t.startBtn;
+            document.getElementById('statusText').textContent = t.statusText;
+            document.getElementById('stopBtn').textContent = t.stopBtn;
+            document.getElementById('previewTitle').textContent = t.previewTitle;
+            document.getElementById('scanAgainBtn').textContent = t.scanAgainBtn;
+            document.getElementById('openBtn').textContent = t.openBtn;
+            document.getElementById('redirectText').textContent = t.redirectText;
+            document.getElementById('qualityLabel').textContent = t.qualityLabel;
+            document.getElementById('focusLabel').textContent = t.focusLabel;
+            document.getElementById('fpsLabel').textContent = t.fpsLabel;
+            document.getElementById('cameraInfo').innerHTML = t.cameraInfo;
+        }
+        
         function loadSettings() {
             const saved = localStorage.getItem('qr_settings');
             if (saved) {
                 const settings = JSON.parse(saved);
                 mode = settings.mode || 'auto';
                 baseUrl = settings.baseUrl || '';
+                params = settings.params || [];
                 lang = settings.lang || 'ru';
+                soundEnabled = settings.soundEnabled !== false;
+                vibrateEnabled = settings.vibrateEnabled !== false;
+                cameraQuality = settings.cameraQuality || 'medium';
+                focusMode = settings.focusMode || 'auto';
+                frameRate = settings.frameRate || 30;
+                
                 document.querySelector(`input[value="${mode}"]`).checked = true;
                 document.getElementById('baseUrl').value = baseUrl;
+                document.getElementById('soundEnabled').checked = soundEnabled;
+                document.getElementById('vibrateEnabled').checked = vibrateEnabled;
+                document.getElementById('cameraQuality').value = cameraQuality;
+                document.getElementById('focusMode').value = focusMode;
+                document.getElementById('frameRate').value = frameRate;
+                
                 updateUrlSettings();
+                renderParams();
             }
+            updateUI();
+            document.getElementById('langBtn').textContent = lang.toUpperCase();
+            document.body.dir = lang === 'he' ? 'rtl' : 'ltr';
         }
         
         function saveSettings() {
+            soundEnabled = document.getElementById('soundEnabled').checked;
+            vibrateEnabled = document.getElementById('vibrateEnabled').checked;
+            cameraQuality = document.getElementById('cameraQuality').value;
+            focusMode = document.getElementById('focusMode').value;
+            frameRate = parseInt(document.getElementById('frameRate').value);
+            
             const settings = {
                 mode,
                 baseUrl: document.getElementById('baseUrl').value,
-                lang
+                params,
+                lang,
+                soundEnabled,
+                vibrateEnabled,
+                cameraQuality,
+                focusMode,
+                frameRate
             };
             localStorage.setItem('qr_settings', JSON.stringify(settings));
             baseUrl = settings.baseUrl;
-            alert('✓ Сохранено');
+            alert(translations[lang].settingsSaved);
+        }
+        
+        function updateCameraQuality() {
+            cameraQuality = document.getElementById('cameraQuality').value;
         }
         
         function setMode(value) {
@@ -375,13 +662,42 @@
             document.getElementById('urlSettings').classList.toggle('hidden', mode !== 'append');
         }
         
+        function addParam() {
+            params.push({ id: Date.now(), name: '', value: '' });
+            renderParams();
+        }
+        
+        function removeParam(id) {
+            params = params.filter(p => p.id !== id);
+            renderParams();
+        }
+        
+        function updateParam(id, field, value) {
+            const param = params.find(p => p.id === id);
+            if (param) param[field] = value;
+        }
+        
+        function renderParams() {
+            const container = document.getElementById('paramsList');
+            container.innerHTML = params.map(p => `
+                <div class="param-row">
+                    <input type="text" placeholder="${lang === 'ru' ? 'Название' : 'שם'}" value="${p.name}" 
+                           onchange="updateParam(${p.id}, 'name', this.value)">
+                    <input type="text" placeholder="${lang === 'ru' ? 'Значение' : 'ערך'}" value="${p.value}"
+                           onchange="updateParam(${p.id}, 'value', this.value)">
+                    <button class="btn-delete" onclick="removeParam(${p.id})">✕</button>
+                </div>
+            `).join('');
+        }
+        
         function toggleSettings() {
             document.getElementById('settings').classList.toggle('hidden');
         }
         
         function toggleLang() {
             lang = lang === 'ru' ? 'he' : 'ru';
-            document.querySelector('.lang-btn').textContent = lang.toUpperCase();
+            updateUI();
+            document.getElementById('langBtn').textContent = lang.toUpperCase();
             document.body.dir = lang === 'he' ? 'rtl' : 'ltr';
         }
         
@@ -395,6 +711,24 @@
             document.getElementById('error').classList.add('hidden');
         }
         
+        function getCameraConstraints() {
+            const quality = {
+                low: { width: 640, height: 480 },
+                medium: { width: 1280, height: 720 },
+                high: { width: 1920, height: 1080 }
+            };
+            
+            return {
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: quality[cameraQuality].width },
+                    height: { ideal: quality[cameraQuality].height },
+                    frameRate: { ideal: frameRate }
+                },
+                audio: false
+            };
+        }
+        
         async function startScanner() {
             hideError();
             
@@ -403,29 +737,65 @@
             ctx = canvas.getContext('2d');
             
             try {
-                // Request camera - SIMPLE approach
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' },
-                    audio: false
-                });
+                const constraints = getCameraConstraints();
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
                 
+                track = stream.getVideoTracks()[0];
                 video.srcObject = stream;
                 
-                // Wait for video to load
                 video.onloadedmetadata = () => {
                     video.play();
-                    
-                    // Show scanning screen
                     document.getElementById('readyScreen').classList.add('hidden');
                     document.getElementById('scanningScreen').classList.remove('hidden');
-                    
                     scanning = true;
                     requestAnimationFrame(scan);
                 };
                 
             } catch (err) {
                 console.error('Camera error:', err);
-                showError('❌ Ошибка доступа к камере: ' + err.message);
+                showError('❌ ' + (lang === 'ru' ? 'Ошибка доступа к камере' : 'שגיאת גישה למצלמה') + ': ' + err.message);
+            }
+        }
+        
+        async function focusCamera() {
+            if (!track) return;
+            
+            try {
+                const capabilities = track.getCapabilities();
+                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                    await track.applyConstraints({
+                        advanced: [{ focusMode: 'continuous' }]
+                    });
+                }
+                
+                if (capabilities.focusDistance) {
+                    await track.applyConstraints({
+                        advanced: [{ focusDistance: capabilities.focusDistance.max }]
+                    });
+                    setTimeout(async () => {
+                        await track.applyConstraints({
+                            advanced: [{ focusDistance: capabilities.focusDistance.min }]
+                        });
+                    }, 100);
+                }
+            } catch (e) {
+                console.log('Focus not supported:', e);
+            }
+        }
+        
+        async function toggleTorch() {
+            if (!track) return;
+            
+            try {
+                const capabilities = track.getCapabilities();
+                if (capabilities.torch) {
+                    const current = track.getSettings().torch || false;
+                    await track.applyConstraints({
+                        advanced: [{ torch: !current }]
+                    });
+                }
+            } catch (e) {
+                console.log('Torch not supported:', e);
             }
         }
         
@@ -456,31 +826,49 @@
             stopScanner();
             lastCode = qrData;
             
-            // Vibration
-            if ('vibrate' in navigator) {
+            if (vibrateEnabled && 'vibrate' in navigator) {
                 navigator.vibrate(100);
             }
             
-            // Beep
-            playBeep();
+            if (soundEnabled) {
+                playBeep();
+            }
             
             if (mode === 'auto') {
                 if (isURL(qrData)) {
+                    showRedirecting();
                     window.location.href = qrData;
                 } else {
                     showPreview(qrData, false);
                 }
             } else if (mode === 'append') {
                 if (baseUrl) {
-                    const separator = baseUrl.includes('?') ? '&' : '?';
-                    window.location.href = baseUrl + separator + 'code=' + encodeURIComponent(qrData);
+                    const finalUrl = buildUrl(qrData);
+                    showRedirecting();
+                    window.location.href = finalUrl;
                 } else {
-                    showError('Укажите базовый URL в настройках');
+                    showError(lang === 'ru' ? 'Укажите базовый URL в настройках' : 'הגדר URL בסיס בהגדרות');
                     showPreview(qrData, false);
                 }
             } else {
                 showPreview(qrData, isURL(qrData));
             }
+        }
+        
+        function buildUrl(code) {
+            const urlParams = new URLSearchParams();
+            urlParams.append('code', code);
+            params.forEach(p => {
+                if (p.name && p.value) {
+                    urlParams.append(p.name, p.value);
+                }
+            });
+            const separator = baseUrl.includes('?') ? '&' : '?';
+            return baseUrl + separator + urlParams.toString();
+        }
+        
+        function showRedirecting() {
+            document.getElementById('redirecting').classList.remove('hidden');
         }
         
         function showPreview(content, isUrl) {
@@ -524,6 +912,7 @@
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
             }
+            track = null;
             document.getElementById('scanningScreen').classList.add('hidden');
             document.getElementById('readyScreen').classList.remove('hidden');
         }
@@ -535,11 +924,11 @@
         
         function openUrl() {
             if (lastCode) {
+                showRedirecting();
                 window.location.href = lastCode;
             }
         }
         
-        // Initialize
         loadSettings();
     </script>
 </body>
