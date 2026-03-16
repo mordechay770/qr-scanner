@@ -2,676 +2,545 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>QR Scanner</title>
-    
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://unpkg.com">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            margin: 0; 
-            overflow-x: hidden; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            -webkit-font-smoothing: antialiased;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        /* Critical fix for video display */
-        #qr-video {
-            width: 100% !important;
-            height: auto !important;
-            max-width: 100% !important;
-            display: block !important;
-            object-fit: cover !important;
-            background: #000 !important;
-            min-height: 300px !important;
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .lang-btn, .settings-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .lang-btn:active, .settings-btn:active {
+            background: rgba(255,255,255,0.3);
         }
         
         .video-container {
             position: relative;
             width: 100%;
             background: #000;
+            border-radius: 15px;
             overflow: hidden;
+            margin-bottom: 15px;
         }
         
-        input, select, textarea { font-size: 16px !important; }
-        .transition-fast { transition: all 0.15s ease; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        @keyframes pulse-ring {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
+        #video {
+            width: 100%;
+            display: block;
+            min-height: 300px;
         }
         
-        .pulse-ring {
-            animation: pulse-ring 2s ease-in-out infinite;
+        .overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 3px solid rgba(255,255,255,0.6);
+            border-radius: 20px;
+            pointer-events: none;
         }
-
-        /* Ensure video is visible on all devices */
-        video::-webkit-media-controls {
+        
+        .corner {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-color: white;
+            border-style: solid;
+        }
+        
+        .corner.tl { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-radius: 20px 0 0 0; }
+        .corner.tr { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-radius: 0 20px 0 0; }
+        .corner.bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-radius: 0 0 0 20px; }
+        .corner.br { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-radius: 0 0 20px 0; }
+        
+        .btn-primary {
+            width: 100%;
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-stop {
+            width: 100%;
+            background: rgba(239, 68, 68, 0.3);
+            color: white;
+            border: 2px solid rgba(239, 68, 68, 0.6);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .ready-screen {
+            background: rgba(255,255,255,0.1);
+            padding: 40px 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .ready-screen h2 {
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+        
+        .ready-screen p {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        
+        .preview {
+            background: rgba(255,255,255,0.1);
+            padding: 30px 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .preview h2 {
+            margin-bottom: 20px;
+        }
+        
+        .preview-content {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            word-break: break-all;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-secondary {
+            flex: 1;
+            background: rgba(59, 130, 246, 0.3);
+            color: white;
+            border: 2px solid rgba(59, 130, 246, 0.6);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .btn-success {
+            flex: 1;
+            background: rgba(34, 197, 94, 0.3);
+            color: white;
+            border: 2px solid rgba(34, 197, 94, 0.6);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .settings {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .settings h3 {
+            margin-bottom: 15px;
+        }
+        
+        .radio-group {
+            margin-bottom: 15px;
+        }
+        
+        .radio-option {
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .radio-option:active {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        input[type="text"], input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .hidden {
             display: none !important;
         }
         
-        video {
-            -webkit-playsinline: true;
-            -moz-playsinline: true;
-            playsinline: true;
+        canvas {
+            display: none;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div id="app"></div>
+    <div class="container">
+        <div class="header">
+            <div class="title">🎯 QR Сканер</div>
+            <div>
+                <button class="lang-btn" onclick="toggleLang()">RU</button>
+                <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+            </div>
+        </div>
+        
+        <div id="settings" class="settings hidden">
+            <h3>Режим сканирования</h3>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" name="mode" value="auto" checked onchange="setMode(this.value)">
+                    Открыть URL автоматически
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="mode" value="append" onchange="setMode(this.value)">
+                    Добавить код к URL
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="mode" value="preview" onchange="setMode(this.value)">
+                    Предпросмотр
+                </label>
+            </div>
+            
+            <div id="urlSettings" class="hidden">
+                <input type="url" id="baseUrl" placeholder="https://example.com/verify">
+            </div>
+            
+            <button class="btn-primary" onclick="saveSettings()">Сохранить</button>
+        </div>
+        
+        <div id="error" class="error hidden"></div>
+        
+        <div id="readyScreen" class="ready-screen">
+            <h2>Готов к сканированию</h2>
+            <p>Нажмите кнопку для запуска камеры</p>
+            <button class="btn-primary" onclick="startScanner()">ЗАПУСТИТЬ СКАНЕР</button>
+        </div>
+        
+        <div id="scanningScreen" class="hidden">
+            <div class="video-container">
+                <video id="video" playsinline autoplay muted></video>
+                <canvas id="canvas"></canvas>
+                <div class="overlay">
+                    <div class="corner tl"></div>
+                    <div class="corner tr"></div>
+                    <div class="corner bl"></div>
+                    <div class="corner br"></div>
+                </div>
+            </div>
+            <div class="status">Наведите на QR-код</div>
+            <button class="btn-stop" onclick="stopScanner()">ОСТАНОВИТЬ</button>
+        </div>
+        
+        <div id="previewScreen" class="preview hidden">
+            <h2>✓ Отсканировано</h2>
+            <div class="preview-content" id="previewContent"></div>
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="scanAgain()">ЕЩЁ РАЗ</button>
+                <button class="btn-success" id="openBtn" onclick="openUrl()">ОТКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-    (function() {
-        'use strict';
+        let video, canvas, ctx, stream, scanning = false;
+        let mode = 'auto';
+        let baseUrl = '';
+        let lastCode = '';
+        let lang = 'ru';
         
-        let state = {
-            scanning: false,
-            settingsOpen: false,
-            scanMode: 'auto_open_url',
-            baseUrl: '',
-            customParams: [],
-            lastScanned: '',
-            previewData: null,
-            error: '',
-            errorDetails: '',
-            language: 'ru',
-            saveMessage: '',
-            soundEnabled: true,
-            vibrationEnabled: true,
-            debugInfo: ''
-        };
-
-        let videoElement = null;
-        let canvasElement = null;
-        let stream = null;
-        let animationFrame = null;
-        let audioContext = null;
-
-        const translations = {
-            ru: {
-                title: 'QR Сканер',
-                settings: 'Настройки',
-                scanMode: 'Режим сканирования',
-                mode1: 'Открыть URL автоматически',
-                mode2: 'Добавить код к базовому URL',
-                mode3: 'Предпросмотр URL',
-                mode4: 'Показать содержимое',
-                baseUrl: 'Базовый URL',
-                customParams: 'Параметры',
-                paramName: 'Название',
-                paramValue: 'Значение',
-                addParam: '+ Добавить',
-                saveSettings: 'Сохранить',
-                resetSettings: 'Сбросить',
-                settingsSaved: '✓ Сохранено',
-                soundFeedback: 'Звук',
-                vibrationFeedback: 'Вибрация',
-                readyToScan: 'Готов к сканированию',
-                readyDescription: 'Нажмите для запуска',
-                startScanner: 'ЗАПУСТИТЬ',
-                aimCamera: 'Наведите на QR-код',
-                stopScanning: 'СТОП',
-                infoNote: 'Быстрое сканирование',
-                previewTitle: 'Отсканировано',
-                scannedContent: 'Содержимое:',
-                openLink: 'ОТКРЫТЬ',
-                scanAgain: 'ЕЩЁ РАЗ',
-                mode2Required: 'Укажите URL',
-                delete: 'X',
-                requesting: 'Запуск камеры...',
-                cameraStarting: 'Камера запускается...'
-            },
-            he: {
-                title: 'סורק QR',
-                settings: 'הגדרות',
-                scanMode: 'מצב סריקה',
-                mode1: 'פתח URL אוטומטית',
-                mode2: 'הוסף ל-URL',
-                mode3: 'תצוגה מקדימה',
-                mode4: 'הצג תוכן',
-                baseUrl: 'URL בסיס',
-                customParams: 'פרמטרים',
-                paramName: 'שם',
-                paramValue: 'ערך',
-                addParam: '+ הוסף',
-                saveSettings: 'שמור',
-                resetSettings: 'אפס',
-                settingsSaved: '✓ נשמר',
-                soundFeedback: 'צליל',
-                vibrationFeedback: 'רטט',
-                readyToScan: 'מוכן',
-                readyDescription: 'לחץ להפעלה',
-                startScanner: 'הפעל',
-                aimCamera: 'כוון לקוד',
-                stopScanning: 'עצור',
-                infoNote: 'סריקה מהירה',
-                previewTitle: 'נסרק',
-                scannedContent: 'תוכן:',
-                openLink: 'פתח',
-                scanAgain: 'שוב',
-                mode2Required: 'הגדר URL',
-                delete: 'X',
-                requesting: 'מפעיל מצלמה...',
-                cameraStarting: 'המצלמה מתחילה...'
-            }
-        };
-
+        // Load settings
         function loadSettings() {
-            try {
-                const saved = localStorage.getItem('qr_scanner_settings');
-                if (saved) {
-                    const settings = JSON.parse(saved);
-                    state = { ...state, ...settings };
-                }
-            } catch (e) {}
+            const saved = localStorage.getItem('qr_settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                mode = settings.mode || 'auto';
+                baseUrl = settings.baseUrl || '';
+                lang = settings.lang || 'ru';
+                document.querySelector(`input[value="${mode}"]`).checked = true;
+                document.getElementById('baseUrl').value = baseUrl;
+                updateUrlSettings();
+            }
         }
-
+        
         function saveSettings() {
             const settings = {
-                baseUrl: state.baseUrl,
-                customParams: state.customParams,
-                language: state.language,
-                scanMode: state.scanMode,
-                soundEnabled: state.soundEnabled,
-                vibrationEnabled: state.vibrationEnabled
+                mode,
+                baseUrl: document.getElementById('baseUrl').value,
+                lang
             };
-            localStorage.setItem('qr_scanner_settings', JSON.stringify(settings));
-            state.saveMessage = translations[state.language].settingsSaved;
-            render();
-            setTimeout(() => { state.saveMessage = ''; render(); }, 2000);
+            localStorage.setItem('qr_settings', JSON.stringify(settings));
+            baseUrl = settings.baseUrl;
+            alert('✓ Сохранено');
         }
-
-        function playBeep() {
-            if (!state.soundEnabled) return;
+        
+        function setMode(value) {
+            mode = value;
+            updateUrlSettings();
+        }
+        
+        function updateUrlSettings() {
+            document.getElementById('urlSettings').classList.toggle('hidden', mode !== 'append');
+        }
+        
+        function toggleSettings() {
+            document.getElementById('settings').classList.toggle('hidden');
+        }
+        
+        function toggleLang() {
+            lang = lang === 'ru' ? 'he' : 'ru';
+            document.querySelector('.lang-btn').textContent = lang.toUpperCase();
+            document.body.dir = lang === 'he' ? 'rtl' : 'ltr';
+        }
+        
+        function showError(msg) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = msg;
+            errorDiv.classList.remove('hidden');
+        }
+        
+        function hideError() {
+            document.getElementById('error').classList.add('hidden');
+        }
+        
+        async function startScanner() {
+            hideError();
+            
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
             try {
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                // Request camera - SIMPLE approach
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: false
+                });
+                
+                video.srcObject = stream;
+                
+                // Wait for video to load
+                video.onloadedmetadata = () => {
+                    video.play();
+                    
+                    // Show scanning screen
+                    document.getElementById('readyScreen').classList.add('hidden');
+                    document.getElementById('scanningScreen').classList.remove('hidden');
+                    
+                    scanning = true;
+                    requestAnimationFrame(scan);
+                };
+                
+            } catch (err) {
+                console.error('Camera error:', err);
+                showError('❌ Ошибка доступа к камере: ' + err.message);
+            }
+        }
+        
+        function scan() {
+            if (!scanning) return;
+            
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                if (typeof jsQR !== 'undefined') {
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    
+                    if (code) {
+                        handleQR(code.data);
+                        return;
+                    }
                 }
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-                osc.frequency.value = 800;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                osc.start();
-                osc.stop(audioContext.currentTime + 0.1);
-            } catch (e) {}
+            }
+            
+            requestAnimationFrame(scan);
         }
-
-        function triggerVibration() {
-            if (!state.vibrationEnabled) return;
-            try {
-                if ('vibrate' in navigator) navigator.vibrate(100);
-            } catch (e) {}
+        
+        function handleQR(qrData) {
+            stopScanner();
+            lastCode = qrData;
+            
+            // Vibration
+            if ('vibrate' in navigator) {
+                navigator.vibrate(100);
+            }
+            
+            // Beep
+            playBeep();
+            
+            if (mode === 'auto') {
+                if (isURL(qrData)) {
+                    window.location.href = qrData;
+                } else {
+                    showPreview(qrData, false);
+                }
+            } else if (mode === 'append') {
+                if (baseUrl) {
+                    const separator = baseUrl.includes('?') ? '&' : '?';
+                    window.location.href = baseUrl + separator + 'code=' + encodeURIComponent(qrData);
+                } else {
+                    showError('Укажите базовый URL в настройках');
+                    showPreview(qrData, false);
+                }
+            } else {
+                showPreview(qrData, isURL(qrData));
+            }
         }
-
+        
+        function showPreview(content, isUrl) {
+            document.getElementById('scanningScreen').classList.add('hidden');
+            document.getElementById('previewScreen').classList.remove('hidden');
+            document.getElementById('previewContent').textContent = content;
+            document.getElementById('openBtn').classList.toggle('hidden', !isUrl);
+        }
+        
         function isURL(str) {
             try {
                 new URL(str);
                 return true;
             } catch {
-                return str.startsWith('http://') || str.startsWith('https://');
+                return str.startsWith('http');
             }
         }
-
-        function buildFinalUrl(qrCode) {
-            if (!state.baseUrl) return '';
-            const params = new URLSearchParams();
-            params.append('code', qrCode);
-            state.customParams.forEach(p => {
-                if (p.name && p.value) params.append(p.name, p.value);
-            });
-            const sep = state.baseUrl.includes('?') ? '&' : '?';
-            return state.baseUrl + sep + params.toString();
-        }
-
-        async function startCamera() {
-            const t = translations[state.language];
-            
+        
+        function playBeep() {
             try {
-                state.error = '';
-                state.errorDetails = '';
-                state.debugInfo = '';
-                state.previewData = null;
-
-                if (state.scanMode === 'append_to_url' && !state.baseUrl) {
-                    state.error = t.mode2Required;
-                    render();
-                    return;
-                }
-
-                // Stop existing stream
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    stream = null;
-                }
-
-                state.error = t.cameraStarting;
-                render();
-
-                // CRITICAL FIX: Simple constraints for maximum compatibility
-                const constraints = {
-                    video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
-                    audio: false
-                };
-
-                console.log('Requesting camera with constraints:', constraints);
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
-                console.log('Camera stream obtained:', stream);
-
-                // Get video element BEFORE setting srcObject
-                videoElement = document.getElementById('qr-video');
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
                 
-                if (!videoElement) {
-                    throw new Error('Video element not found');
-                }
-
-                // CRITICAL: Set multiple attributes for compatibility
-                videoElement.setAttribute('playsinline', '');
-                videoElement.setAttribute('webkit-playsinline', '');
-                videoElement.setAttribute('muted', '');
-                videoElement.setAttribute('autoplay', '');
-                videoElement.muted = true;
-                videoElement.playsInline = true;
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
                 
-                // Set srcObject
-                videoElement.srcObject = stream;
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
                 
-                // Force play with multiple attempts
-                let playAttempts = 0;
-                const attemptPlay = async () => {
-                    try {
-                        await videoElement.play();
-                        console.log('Video playing successfully');
-                        state.scanning = true;
-                        state.error = '';
-                        render();
-                        
-                        // Wait a bit for video to actually start
-                        setTimeout(() => {
-                            if (videoElement.videoWidth > 0) {
-                                console.log('Video dimensions:', videoElement.videoWidth, 'x', videoElement.videoHeight);
-                                startScanning();
-                            } else {
-                                console.warn('Video has no dimensions yet');
-                                state.debugInfo = 'Waiting for video...';
-                                render();
-                                setTimeout(startScanning, 500);
-                            }
-                        }, 300);
-                        
-                    } catch (playErr) {
-                        console.error('Play attempt failed:', playErr);
-                        playAttempts++;
-                        if (playAttempts < 3) {
-                            setTimeout(attemptPlay, 300);
-                        } else {
-                            throw playErr;
-                        }
-                    }
-                };
-
-                // Start play attempts
-                await attemptPlay();
-                
-            } catch (err) {
-                console.error('Camera error:', err);
-                state.scanning = false;
-                
-                if (err.name === 'NotAllowedError') {
-                    state.error = '🔒 Доступ запрещён';
-                    state.errorDetails = 'Разрешите доступ к камере в настройках браузера';
-                } else if (err.name === 'NotFoundError') {
-                    state.error = '📷 Камера не найдена';
-                    state.errorDetails = 'Проверьте подключение камеры';
-                } else if (err.name === 'NotReadableError') {
-                    state.error = '⚠️ Камера занята';
-                    state.errorDetails = 'Закройте другие приложения с камерой';
-                } else {
-                    state.error = '❌ Ошибка: ' + err.name;
-                    state.errorDetails = err.message || 'Попробуйте перезагрузить страницу';
-                }
-                
-                state.debugInfo = 'Error: ' + err.toString();
-                render();
-            }
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {}
         }
-
-        function stopCamera() {
+        
+        function stopScanner() {
+            scanning = false;
             if (stream) {
-                stream.getTracks().forEach(t => t.stop());
+                stream.getTracks().forEach(track => track.stop());
                 stream = null;
             }
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
-                animationFrame = null;
-            }
-            state.scanning = false;
-            if (videoElement) {
-                videoElement.srcObject = null;
-            }
+            document.getElementById('scanningScreen').classList.add('hidden');
+            document.getElementById('readyScreen').classList.remove('hidden');
         }
-
-        function detectQR() {
-            if (!videoElement || !canvasElement) {
-                animationFrame = requestAnimationFrame(detectQR);
-                return;
-            }
-
-            if (videoElement.readyState !== videoElement.HAVE_ENOUGH_DATA) {
-                animationFrame = requestAnimationFrame(detectQR);
-                return;
-            }
-
-            const canvas = canvasElement;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            
-            const w = videoElement.videoWidth;
-            const h = videoElement.videoHeight;
-            
-            if (w > 0 && h > 0) {
-                canvas.width = w;
-                canvas.height = h;
-                ctx.drawImage(videoElement, 0, 0, w, h);
-                
-                const imageData = ctx.getImageData(0, 0, w, h);
-                
-                if (typeof jsQR !== 'undefined') {
-                    const code = jsQR(imageData.data, w, h, {
-                        inversionAttempts: 'dontInvert'
-                    });
-                    
-                    if (code && code.data) {
-                        handleQRDetected(code.data);
-                        return;
-                    }
-                }
-            }
-
-            animationFrame = requestAnimationFrame(detectQR);
+        
+        function scanAgain() {
+            document.getElementById('previewScreen').classList.add('hidden');
+            startScanner();
         }
-
-        function startScanning() {
-            if (animationFrame) cancelAnimationFrame(animationFrame);
-            animationFrame = requestAnimationFrame(detectQR);
-        }
-
-        function handleQRDetected(qrData) {
-            stopCamera();
-            playBeep();
-            triggerVibration();
-            state.lastScanned = qrData;
-
-            switch (state.scanMode) {
-                case 'auto_open_url':
-                    if (isURL(qrData)) {
-                        window.location.href = qrData;
-                    } else {
-                        state.previewData = { content: qrData, isUrl: false };
-                        render();
-                    }
-                    break;
-                case 'append_to_url':
-                    window.location.href = buildFinalUrl(qrData);
-                    break;
-                case 'preview_url':
-                case 'preview_content':
-                    state.previewData = { content: qrData, isUrl: isURL(qrData) };
-                    render();
-                    break;
+        
+        function openUrl() {
+            if (lastCode) {
+                window.location.href = lastCode;
             }
         }
-
-        function render() {
-            const t = translations[state.language];
-            const isRTL = state.language === 'he';
-            
-            const app = document.getElementById('app');
-            app.innerHTML = `
-                <div class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex flex-col" dir="${isRTL ? 'rtl' : 'ltr'}">
-                    <div class="bg-white/10 backdrop-blur-md border-b border-white/20 p-3">
-                        <div class="max-w-4xl mx-auto flex justify-between items-center">
-                            <h1 class="text-xl font-bold text-white flex items-center gap-2">
-                                <i data-lucide="camera" class="w-6 h-6"></i>
-                                ${t.title}
-                            </h1>
-                            <div class="flex gap-2">
-                                <button onclick="window.qrApp.toggleLanguage()" class="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-fast text-white">
-                                    <span class="text-xs font-bold">${state.language.toUpperCase()}</span>
-                                </button>
-                                <button onclick="window.qrApp.toggleSettings()" class="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-fast text-white">
-                                    <i data-lucide="settings" class="w-5 h-5"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    ${state.settingsOpen ? renderSettings(t) : ''}
-
-                    <div class="flex-1 flex items-center justify-center p-4">
-                        <div class="max-w-2xl w-full">
-                            ${state.error ? `
-                                <div class="bg-red-500/20 border-2 border-red-400/50 rounded-xl p-4 mb-4 text-white text-center">
-                                    <div class="font-bold text-lg mb-1">${state.error}</div>
-                                    ${state.errorDetails ? `<div class="text-sm mb-2">${state.errorDetails}</div>` : ''}
-                                    ${state.debugInfo ? `<div class="text-xs opacity-70 mt-2">${state.debugInfo}</div>` : ''}
-                                </div>
-                            ` : ''}
-                            
-                            ${state.previewData ? renderPreview(t) : ''}
-                            ${!state.previewData && !state.scanning ? renderReady(t) : ''}
-                            ${!state.previewData && state.scanning ? renderScanning(t) : ''}
-                        </div>
-                    </div>
-
-                    <div class="bg-white/5 border-t border-white/10 p-2 text-center">
-                        <p class="text-white/60 text-xs">${t.infoNote}</p>
-                    </div>
-                </div>
-            `;
-
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-
-            // CRITICAL: Get references AFTER render
-            videoElement = document.getElementById('qr-video');
-            canvasElement = document.getElementById('qr-canvas');
-        }
-
-        function renderSettings(t) {
-            return `
-                <div class="bg-white/10 backdrop-blur-md border-b border-white/20 p-4 max-h-[60vh] overflow-y-auto hide-scrollbar">
-                    <div class="max-w-4xl mx-auto">
-                        ${state.saveMessage ? `<div class="bg-green-500/30 border border-green-400/50 rounded-lg p-2 mb-3 text-white text-center text-sm">${state.saveMessage}</div>` : ''}
-                        
-                        <div class="mb-3">
-                            <label class="block text-sm font-semibold text-white mb-2">${t.scanMode}</label>
-                            <div class="space-y-1">
-                                ${['auto_open_url', 'append_to_url', 'preview_url', 'preview_content'].map((mode, i) => `
-                                    <label class="flex items-center gap-2 p-2 bg-white/10 rounded-lg cursor-pointer hover:bg-white/15 transition-fast">
-                                        <input type="radio" name="scanMode" value="${mode}" ${state.scanMode === mode ? 'checked' : ''} onchange="window.qrApp.setScanMode('${mode}')">
-                                        <span class="text-white text-sm">${t['mode' + (i + 1)]}</span>
-                                    </label>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <div class="flex gap-2 mb-3">
-                            <label class="flex-1 flex items-center gap-2 p-2 bg-white/10 rounded-lg cursor-pointer">
-                                <input type="checkbox" ${state.soundEnabled ? 'checked' : ''} onchange="window.qrApp.toggleSound()">
-                                <span class="text-white text-sm">${t.soundFeedback}</span>
-                            </label>
-                            <label class="flex-1 flex items-center gap-2 p-2 bg-white/10 rounded-lg cursor-pointer">
-                                <input type="checkbox" ${state.vibrationEnabled ? 'checked' : ''} onchange="window.qrApp.toggleVibration()">
-                                <span class="text-white text-sm">${t.vibrationFeedback}</span>
-                            </label>
-                        </div>
-
-                        ${state.scanMode === 'append_to_url' ? `
-                            <div class="mb-3">
-                                <label class="block text-sm font-semibold text-white mb-1">${t.baseUrl}</label>
-                                <input type="url" value="${state.baseUrl}" onchange="window.qrApp.setBaseUrl(this.value)" 
-                                    class="w-full px-3 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none text-sm" 
-                                    placeholder="https://example.com" dir="ltr">
-                            </div>
-
-                            <div class="mb-3">
-                                <div class="flex justify-between items-center mb-2">
-                                    <label class="text-sm font-semibold text-white">${t.customParams}</label>
-                                    <button onclick="window.qrApp.addParam()" class="px-3 py-1 bg-green-500/30 rounded-lg text-white text-xs border border-green-400/50">
-                                        ${t.addParam}
-                                    </button>
-                                </div>
-                                ${state.customParams.map(p => `
-                                    <div class="flex gap-2 mb-2">
-                                        <input type="text" value="${p.name}" onchange="window.qrApp.updateParam(${p.id}, 'name', this.value)"
-                                            placeholder="${t.paramName}" dir="ltr"
-                                            class="flex-1 px-2 py-1 rounded bg-white/20 border border-white/30 text-white text-sm">
-                                        <input type="text" value="${p.value}" onchange="window.qrApp.updateParam(${p.id}, 'value', this.value)"
-                                            placeholder="${t.paramValue}"
-                                            class="flex-1 px-2 py-1 rounded bg-white/20 border border-white/30 text-white text-sm">
-                                        <button onclick="window.qrApp.removeParam(${p.id})" class="px-2 py-1 bg-red-500/30 rounded text-white text-xs">
-                                            ${t.delete}
-                                        </button>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-
-                        <div class="flex gap-2">
-                            <button onclick="window.qrApp.saveSettings()" class="flex-1 px-4 py-2 bg-blue-500/30 text-white rounded-lg font-semibold border border-blue-400/50 text-sm">
-                                ${t.saveSettings}
-                            </button>
-                            <button onclick="window.qrApp.resetSettings()" class="px-4 py-2 bg-red-500/30 text-white rounded-lg border border-red-400/50 text-sm">
-                                ${t.resetSettings}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderPreview(t) {
-            return `
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-center border border-white/20">
-                    <i data-lucide="check-circle" class="w-16 h-16 mx-auto mb-4 text-green-400"></i>
-                    <h2 class="text-xl font-bold text-white mb-3">${t.previewTitle}</h2>
-                    <div class="bg-white/20 rounded-lg p-3 mb-4">
-                        <div class="text-white break-all text-sm bg-black/20 p-2 rounded" dir="ltr">${state.previewData.content}</div>
-                    </div>
-                    <div class="flex gap-2">
-                        ${state.previewData.isUrl ? `
-                            <button onclick="window.qrApp.openUrl()" class="flex-1 px-6 py-3 bg-green-500/30 text-white rounded-xl font-bold border border-green-400/50">
-                                ${t.openLink}
-                            </button>
-                        ` : ''}
-                        <button onclick="window.qrApp.scanAgain()" class="flex-1 px-6 py-3 bg-blue-500/30 text-white rounded-xl font-bold border border-blue-400/50">
-                            ${t.scanAgain}
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderReady(t) {
-            return `
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 text-center border border-white/20">
-                    <i data-lucide="scan" class="w-20 h-20 mx-auto mb-6 text-white/80 pulse-ring"></i>
-                    <h2 class="text-2xl font-bold text-white mb-2">${t.readyToScan}</h2>
-                    <p class="text-white/80 mb-6">${t.readyDescription}</p>
-                    <button onclick="window.qrApp.startCamera()" class="px-12 py-4 bg-white text-blue-600 rounded-xl font-bold text-xl hover:bg-white/90 shadow-lg">
-                        ${t.startScanner}
-                    </button>
-                </div>
-            `;
-        }
-
-        function renderScanning(t) {
-            return `
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20">
-                    <div class="video-container">
-                        <video id="qr-video" playsinline webkit-playsinline autoplay muted></video>
-                        <canvas id="qr-canvas" style="display:none;"></canvas>
-                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div class="w-56 h-56 border-4 border-white rounded-2xl relative pulse-ring">
-                                <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-2xl"></div>
-                                <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-2xl"></div>
-                                <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-2xl"></div>
-                                <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-2xl"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-3 bg-white/5">
-                        <p class="text-white text-center mb-2 font-semibold">${t.aimCamera}</p>
-                        <button onclick="window.qrApp.stopCamera()" class="w-full px-6 py-3 bg-red-500/30 text-white rounded-lg font-bold border border-red-400/50">
-                            ${t.stopScanning}
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        window.qrApp = {
-            startCamera: () => { startCamera(); },
-            stopCamera: () => { stopCamera(); render(); },
-            toggleSettings: () => { state.settingsOpen = !state.settingsOpen; render(); },
-            toggleLanguage: () => {
-                state.language = state.language === 'ru' ? 'he' : 'ru';
-                saveSettings();
-            },
-            setScanMode: (mode) => { state.scanMode = mode; render(); },
-            toggleSound: () => { state.soundEnabled = !state.soundEnabled; },
-            toggleVibration: () => { state.vibrationEnabled = !state.vibrationEnabled; },
-            setBaseUrl: (url) => { state.baseUrl = url; render(); },
-            addParam: () => { 
-                state.customParams.push({ id: Date.now(), name: '', value: '' }); 
-                render(); 
-            },
-            updateParam: (id, field, value) => {
-                const param = state.customParams.find(p => p.id === id);
-                if (param) param[field] = value;
-            },
-            removeParam: (id) => {
-                state.customParams = state.customParams.filter(p => p.id !== id);
-                render();
-            },
-            saveSettings: () => { saveSettings(); },
-            resetSettings: () => {
-                localStorage.removeItem('qr_scanner_settings');
-                state.baseUrl = '';
-                state.customParams = [];
-                state.scanMode = 'auto_open_url';
-                render();
-            },
-            openUrl: () => {
-                if (state.previewData) window.location.href = state.previewData.content;
-            },
-            scanAgain: () => {
-                state.previewData = null;
-                startCamera();
-            }
-        };
-
+        
+        // Initialize
         loadSettings();
-        render();
-    })();
     </script>
 </body>
 </html>
